@@ -10,7 +10,7 @@
     state: "{{ netbox_prefix_state | default('present') }}"
   register: add_netbox_resulr
 
-- name: Get the prefix for gathering available ips
+- name: Set prefix_id variable for gathering available ips
   set_fact:
     prefix_id: "{{ item.key }}"
   loop: >-

@@ -1,0 +1,21 @@
+---
+- name: Set gateway_ip_addr variable
+  set_fact:
+    gateway_ip_addr: "{{ item.value.address | ipaddr('address') }}"
+  when:
+    - item.value.description == "Gateway"
+    - item.value.address | ipaddr(target_prefix)
+  loop: >-
+    {{ query('netbox.netbox.nb_lookup',
+             'ip-addresses',
+             api_endpoint=netbox_url,
+             token=netbox_token,
+             api_filter='tenant=%s' % (tenant_name)
+       )
+    }}
+
+- name: Set variables to publish between tasks
+  ansible.builtin.set_stats:
+    data:
+      "{{ inventory_hostname }}":
+        gateway_ip_addr: "{{ gateway_ip_addr }}"
