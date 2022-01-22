@@ -17,5 +17,4 @@
 - name: Set variables to publish between tasks
   ansible.builtin.set_stats:
     data:
-      "{{ inventory_hostname }}":
-        gateway_ip_addr: "{{ gateway_ip_addr }}"
+      gateway_ip_addr: "{{ gateway_ip_addr }}"

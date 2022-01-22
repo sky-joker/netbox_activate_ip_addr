@@ -45,9 +45,8 @@
 - name: Set variables to publish between tasks
   ansible.builtin.set_stats:
     data:
-      "{{ inventory_hostname }}":
-        vm_ip_addr: "{{ vm_ip_addr }}"
-        vm_ip_netmask: " {{ vm_ip_netmask }}"
+      vm_ip_addr: "{{ vm_ip_addr }}"
+      vm_ip_netmask: " {{ vm_ip_netmask }}"
 
 - name: Change IP address status to Active
   netbox.netbox.netbox_ip_address:
