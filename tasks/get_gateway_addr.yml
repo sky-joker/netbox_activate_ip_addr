@@ -1,6 +1,6 @@
 ---
 - name: Set gateway_ip_addr variable
-  set_fact:
+  ansible.builtin.set_fact:
     gateway_ip_addr: "{{ item.value.address | ipaddr('address') }}"
   when:
     - item.value.description == "Gateway"
