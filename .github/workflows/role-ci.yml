@@ -1,7 +1,7 @@
 name: role-ci
 on:
   push:
-    pull_request:
+  pull_request:
 
 jobs:
   role-test:
