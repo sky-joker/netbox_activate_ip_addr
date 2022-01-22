@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: netbox_activate_ip_addr
+  namespace: sky_joker
   author: sky-joker
   description: The role does activate the IP address status that NetBox manages
   license: MIT
