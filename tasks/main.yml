@@ -1,0 +1,3 @@
+---
+- name: Include activate_ip_addr tasks
+  include_tasks: activate_ip_addr.yml

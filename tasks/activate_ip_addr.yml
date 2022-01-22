@@ -1,0 +1,62 @@
+---
+- name: Add a new prefix
+  netbox.netbox.netbox_prefix:
+    netbox_url: "{{ netbox_url }}"
+    validate_certs: "{{ validate_certs | default('false') }}"
+    netbox_token: "{{ netbox_token }}"
+    data:
+      prefix: "{{ target_prefix }}"
+      tenant: "{{ tenant_name }}"
+    state: "{{ netbox_prefix_state | default('present') }}"
+  register: add_netbox_resulr
+
+- name: Get the prefix for gathering available ips
+  set_fact:
+    prefix_id: "{{ item.key }}"
+  loop: >-
+    {{ query('netbox.netbox.nb_lookup',
+             'prefixes',
+             api_endpoint=netbox_url,
+             token=netbox_token,
+             api_filter='tenant=%s prefix=%s' % (tenant_name, target_prefix)
+       )
+    }}
+
+- name: Gather available ips info from NetBox
+  ansible.builtin.uri:
+    url: "{{ netbox_url }}/api/ipam/prefixes/{{ prefix_id }}/available-ips/"
+    validate_certs: "{{ validate_certs | default('false') }}"
+    headers:
+      Authorization: "Token {{ netbox_token }}"
+      Accept: "application/json"
+  register: gather_available_ips_result
+
+- name: Available IP address not found
+  fail:
+    msg: "Available IP address not found"
+  when: gather_available_ips_result.json | length == 0
+
+- name: Set vm_ip_addr and vm_ip_netmask variables
+  set_fact:
+    vm_ip_addr: "{{ (gather_available_ips_result.json | first)['address'] | ipaddr('address') }}"
+    vm_ip_netmask: "{{ (gather_available_ips_result.json | first)['address'] | ipaddr('netmask') }}"
+    vm_ip_family: "{{ (gather_available_ips_result.json | first)['family'] }}"
+
+- name: Set variables to publish between tasks
+  ansible.builtin.set_stats:
+    data:
+      "{{ inventory_hostname }}":
+        vm_ip_addr: "{{ vm_ip_addr }}"
+        vm_ip_netmask: " {{ vm_ip_netmask }}"
+
+- name: Change IP address status to Active
+  netbox.netbox.netbox_ip_address:
+    netbox_url: "{{ netbox_url }}"
+    validate_certs: "{{ validate_certs | default('false') }}"
+    netbox_token: "{{ netbox_token }}"
+    data:
+      address: "{{ vm_ip_addr }}"
+      family: "{{ vm_ip_family }}"
+      tenant: "{{ tenant_name }}"
+      dns_name: "{{ vm_name }}.{{ domain }}"
+      status: Active
