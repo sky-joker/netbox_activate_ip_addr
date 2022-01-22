@@ -46,7 +46,7 @@
   ansible.builtin.set_stats:
     data:
       vm_ip_addr: "{{ vm_ip_addr }}"
-      vm_ip_netmask: " {{ vm_ip_netmask }}"
+      vm_ip_netmask: "{{ vm_ip_netmask }}"
 
 - name: Change IP address status to Active
   netbox.netbox.netbox_ip_address:
