@@ -1,0 +1,99 @@
+---
+- name: New tenant additional flag
+  set_fact:
+    # It is included tenant information if the tenant exists else not included.
+    new_tenant_additional_flag: >-
+      {{ query('netbox.netbox.nb_lookup',
+               'tenants',
+               api_endpoint=netbox_url,
+               token=netbox_token,
+               api_filter='name=%s' % (tenant_name)
+         )
+      }}
+
+- name: The tasks run if the tenant doesn’t exist
+  when:
+    - new_tenant_additional_flag | length == 0  # It is zero if the tenant does not exist.
+  block:
+    - name: Gather IP addr that NetBox has
+      set_fact:
+        ip_addrs: >-
+          {{ query('netbox.netbox.nb_lookup',
+                   'prefixes',
+                   api_endpoint=netbox_url,
+                   token=netbox_token
+             )
+          }}
+
+    - name: Set tenant_ips variable
+      set_fact:
+        tenant_ip_addrs: >-
+          {{ tenant_ip_addrs | default([])
+            + [item.value.prefix]
+          }}
+      loop: "{{ ip_addrs }}"
+      when:
+        - item.value.prefix | ansible.netcommon.ipaddr('100.64.0.0/16')
+
+    - name: Set target_prefix variable
+      set_fact:
+        target_prefix: "{{ [one_octet, two_octet, three_octet, four_octet] | join('.') }}"
+      vars:
+        one_octet: "{{ (tenant_ip_addrs | sort | last).split('.')[0] }}"
+        two_octet: "{{ (tenant_ip_addrs | sort | last).split('.')[1] }}"
+        three_octet: "{{ (tenant_ip_addrs | sort | last).split('.')[2] | int + 1 }}"
+        four_octet: "{{ (tenant_ip_addrs | sort | last).split('.')[3] }}"
+
+    - name: Add new tenant
+      netbox.netbox.netbox_tenant:
+        netbox_url: "{{ netbox_url }}"
+        validate_certs: "{{ validate_certs | default('false') }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ tenant_name }}"
+        state: present
+
+    - name: Add new prefix
+      netbox.netbox.netbox_prefix:
+        netbox_url: "{{ netbox_url }}"
+        validate_certs: "{{ validate_certs | default('false') }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          tenant: "{{ tenant_name }}"
+          prefix: "{{ target_prefix }}"
+        state: present
+
+    - name: Add default gateway
+      netbox.netbox.netbox_ip_address:
+        netbox_url: "{{ netbox_url }}"
+        validate_certs: "{{ validate_certs | default('false') }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          address: "{{ target_prefix | ansible.netcommon.ipaddr('1') }}"
+          family: "{{ ip_family | default(4) }}"
+          tenant: "{{ tenant_name }}"
+          description: "Gateway"
+          status: Active
+
+- name: The tasks run if the tenant does exist
+  when:
+    - new_tenant_additional_flag | length == 1
+  block:
+    - name: Gather prefixes for tenants
+      set_fact:
+        tenant_prefixes: >-
+          {{ query('netbox.netbox.nb_lookup',
+                   'prefixes',
+                   api_endpoint=netbox_url,
+                   token=netbox_token
+             )
+          }}
+
+    - name: Set target_prefix variable
+      set_fact:
+        target_prefix: "{{ item.value.prefix }}"
+      loop: "{{ tenant_prefixes }}"
+      when:
+        - "'tenant' in item.value"
+        - item.value.tenant
+        - item.value.tenant.name == tenant_name

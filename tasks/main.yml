@@ -1,6 +1,9 @@
 ---
-- name: Include activate_ip_addr tasks
-  ansible.builtin.include_tasks: activate_ip_addr.yml
+- name: Include add_prefix tasks
+  include_tasks: add_prefix.yml
 
-- name: Include get_gateway_addr tasks
-  ansible.builtin.include_tasks: get_gateway_addr.yml
+- name: Include activate_ip_addr tasks
+  include_tasks: activate_ip_addr.yml
+
+- name: Include set_aap_jobtemplate_variable tasks
+  include_tasks: set_aap_jobtemplate_variable.yml
