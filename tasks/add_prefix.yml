@@ -1,6 +1,6 @@
 ---
 - name: New tenant additional flag
-  set_fact:
+  ansible.builtin.set_fact:
     # It is included tenant information if the tenant exists else not included.
     new_tenant_additional_flag: >-
       {{ query('netbox.netbox.nb_lookup',
@@ -16,7 +16,7 @@
     - new_tenant_additional_flag | length == 0  # It is zero if the tenant does not exist.
   block:
     - name: Gather IP addr that NetBox has
-      set_fact:
+      ansible.builtin.set_fact:
         ip_addrs: >-
           {{ query('netbox.netbox.nb_lookup',
                    'prefixes',
@@ -26,7 +26,7 @@
           }}
 
     - name: Set tenant_ips variable
-      set_fact:
+      ansible.builtin.set_fact:
         tenant_ip_addrs: >-
           {{ tenant_ip_addrs | default([])
             + [item.value.prefix]
@@ -36,7 +36,7 @@
         - item.value.prefix | ansible.netcommon.ipaddr('100.64.0.0/16')
 
     - name: Set target_prefix variable
-      set_fact:
+      ansible.builtin.set_fact:
         target_prefix: "{{ [one_octet, two_octet, three_octet, four_octet] | join('.') }}"
       vars:
         one_octet: "{{ (tenant_ip_addrs | sort | last).split('.')[0] }}"
@@ -80,7 +80,7 @@
     - new_tenant_additional_flag | length == 1
   block:
     - name: Gather prefixes for tenants
-      set_fact:
+      ansible.builtin.set_fact:
         tenant_prefixes: >-
           {{ query('netbox.netbox.nb_lookup',
                    'prefixes',
@@ -90,7 +90,7 @@
           }}
 
     - name: Set target_prefix variable
-      set_fact:
+      ansible.builtin.set_fact:
         target_prefix: "{{ item.value.prefix }}"
       loop: "{{ tenant_prefixes }}"
       when:

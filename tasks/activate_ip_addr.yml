@@ -1,6 +1,6 @@
 ---
 - name: Set prefix_id variable for gathering available ips
-  set_fact:
+  ansible.builtin.set_fact:
     prefix_id: "{{ item.key }}"
   loop: >-
     {{ query('netbox.netbox.nb_lookup',
@@ -12,7 +12,7 @@
     }}
 
 - name: Set default_gateway variable
-  set_fact:
+  ansible.builtin.set_fact:
     default_gateway: >-
       {{ ( query('netbox.netbox.nb_lookup',
                'ip-addresses',
@@ -40,7 +40,7 @@
   when: gather_available_ips_result.json | length == 0
 
 - name: Set target_vm_info variable
-  set_fact:
+  ansible.builtin.set_fact:
     target_vm_info: >-
       {{ target_vm_info | default([])
         + [{
